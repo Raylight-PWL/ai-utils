@@ -22,6 +22,7 @@ import { AiTextGenerationToolInputWithFunction } from "./types";
  * @param {number} [config.maxRecursiveToolRuns=0] - The maximum number of recursive tool runs to perform.
  * @param {boolean} [config.strictValidation=false] - Whether to perform strict validation (using zod) of the arguments passed to the tools.
  * @param {boolean} [config.verbose=false] - Whether to enable verbose logging.
+ * @param {number} [config.maxTokens=256] - The maximum number of tokens to generate.
  * @param {(tools: AiTextGenerationToolInputWithFunction[], ai: Ai, model: BaseAiTextGenerationModels, messages: RoleScopedChatInput[]) => Promise<AiTextGenerationToolInputWithFunction[]>} [config.trimFunction] - Use a trim function to trim down the number of tools given to the AI for a given task. You can also use this alongside `autoTrimTools`, which uses an extra AI.run call to cut down on the input tokens of the tool call based on the tool's names.
  *
  * @returns {Promise<AiTextGenerationOutput>} The final response in the same format as the AI.run call.
@@ -48,6 +49,8 @@ export const runWithTools = async (
 		strictValidation?: boolean;
 		/** Whether to enable verbose logging. */
 		verbose?: boolean;
+		/* The maximum number of tokens to generate.*/
+		maxTokens?: number;
 
 		/** Automatically decides the best tools to use for a given task. */
 		trimFunction?: (
@@ -70,6 +73,7 @@ export const runWithTools = async (
 			messages: RoleScopedChatInput[],
 		) => tools as AiTextGenerationToolInputWithFunction[],
 		strictValidation = false,
+		maxTokens = 256,
 	} = config;
 
 	// Enable verbose logging if specified in the config
@@ -127,6 +131,7 @@ export const runWithTools = async (
 				messages: messages,
 				stream: false,
 				tools: tools,
+				max_tokens: maxTokens,
 			})) as {
 				response?: string;
 				tool_calls?: {
@@ -237,6 +242,7 @@ export const runWithTools = async (
 				const finalResponse = await ai.run(model, {
 					messages: messages,
 					stream: streamFinalResponse,
+					max_tokens: maxTokens,
 				});
 				totalCharacters += JSON.stringify(messages).length;
 				Logger.info(
